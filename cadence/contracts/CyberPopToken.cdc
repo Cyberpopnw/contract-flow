@@ -2,7 +2,7 @@ import FungibleToken from 0xFUNGIBLETOKENADDRESS
 
 pub contract CyberPopToken: FungibleToken {
 
-    /// Total supply of ExampleTokens in existence
+    /// Total supply of CyberPopTokens in existence
     pub var totalSupply: UFix64
 
     /// TokensInitialized
@@ -88,7 +88,7 @@ pub contract CyberPopToken: FungibleToken {
         /// been consumed and therefore can be destroyed.
         ///
         pub fun deposit(from: @FungibleToken.Vault) {
-            let vault <- from as! @ExampleToken.Vault
+            let vault <- from as! @CyberPopToken.Vault
             self.balance = self.balance + vault.balance
             emit TokensDeposited(amount: vault.balance, to: self.owner?.address)
             vault.balance = 0.0
@@ -96,7 +96,7 @@ pub contract CyberPopToken: FungibleToken {
         }
 
         destroy() {
-            ExampleToken.totalSupply = ExampleToken.totalSupply - self.balance
+            CyberPopToken.totalSupply = CyberPopToken.totalSupply - self.balance
         }
     }
 
@@ -146,12 +146,12 @@ pub contract CyberPopToken: FungibleToken {
         /// Function that mints new tokens, adds them to the total supply,
         /// and returns them to the calling context.
         ///
-        pub fun mintTokens(amount: UFix64): @ExampleToken.Vault {
+        pub fun mintTokens(amount: UFix64): @CyberPopToken.Vault {
             pre {
                 amount > 0.0: "Amount minted must be greater than zero"
                 amount <= self.allowedAmount: "Amount minted must be less than the allowed amount"
             }
-            ExampleToken.totalSupply = ExampleToken.totalSupply + amount
+            CyberPopToken.totalSupply = CyberPopToken.totalSupply + amount
             self.allowedAmount = self.allowedAmount - amount
             emit TokensMinted(amount: amount)
             return <-create Vault(balance: amount)
@@ -176,7 +176,7 @@ pub contract CyberPopToken: FungibleToken {
         /// total supply in the Vault destructor.
         ///
         pub fun burnTokens(from: @FungibleToken.Vault) {
-            let vault <- from as! @ExampleToken.Vault
+            let vault <- from as! @CyberPopToken.Vault
             let amount = vault.balance
             destroy vault
             emit TokensBurned(amount: amount)
@@ -189,26 +189,26 @@ pub contract CyberPopToken: FungibleToken {
         // Create the Vault with the total supply of tokens and save it in storage
         //
         let vault <- create Vault(balance: self.totalSupply)
-        self.account.save(<-vault, to: /storage/exampleTokenVault)
+        self.account.save(<-vault, to: /storage/cyberPopTokenVault)
 
         // Create a public capability to the stored Vault that only exposes
         // the `deposit` method through the `Receiver` interface
         //
         self.account.link<&{FungibleToken.Receiver}>(
-            /public/exampleTokenReceiver,
-            target: /storage/exampleTokenVault
+            /public/cyberPopTokenReceiver,
+            target: /storage/cyberPopTokenVault
         )
 
         // Create a public capability to the stored Vault that only exposes
         // the `balance` field through the `Balance` interface
         //
-        self.account.link<&ExampleToken.Vault{FungibleToken.Balance}>(
-            /public/exampleTokenBalance,
-            target: /storage/exampleTokenVault
+        self.account.link<&CyberPopToken.Vault{FungibleToken.Balance}>(
+            /public/cyberPopTokenBalance,
+            target: /storage/cyberPopTokenVault
         )
 
         let admin <- create Administrator()
-        self.account.save(<-admin, to: /storage/exampleTokenAdmin)
+        self.account.save(<-admin, to: /storage/cyberPopTokenAdmin)
 
         // Emit an event that shows that the contract was initialized
         //

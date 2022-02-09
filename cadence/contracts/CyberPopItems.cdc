@@ -62,7 +62,7 @@ pub contract CyberPopItems: NonFungibleToken {
         pub fun deposit(token: @NonFungibleToken.NFT)
         pub fun getIDs(): [UInt64]
         pub fun borrowNFT(id: UInt64): &NonFungibleToken.NFT
-        pub fun borrowCyberPopItems(id: UInt64): &ExampleNFT.NFT? {
+        pub fun borrowCyberPopItems(id: UInt64): &CyberPopItems.NFT? {
             post {
                 (result == nil) || (result?.id == id):
                     "Cannot borrow CyberPopItems reference: the ID of the returned reference is incorrect"
@@ -114,7 +114,7 @@ pub contract CyberPopItems: NonFungibleToken {
             return &self.ownedNFTs[id] as &NonFungibleToken.NFT
         }
  
-        pub fun borrowCyberPopItems(id: UInt64): &ExampleNFT.NFT? {
+        pub fun borrowCyberPopItems(id: UInt64): &CyberPopItems.NFT? {
             if self.ownedNFTs[id] != nil {
                 // Create an authorized reference to allow downcasting
                 let ref = &self.ownedNFTs[id] as auth &NonFungibleToken.NFT
@@ -126,8 +126,8 @@ pub contract CyberPopItems: NonFungibleToken {
 
         pub fun borrowViewResolver(id: UInt64): &AnyResource{MetadataViews.Resolver} {
             let nft = &self.ownedNFTs[id] as auth &NonFungibleToken.NFT
-            let exampleNFT = nft as! &CyberPopItems.NFT
-            return exampleNFT as &AnyResource{MetadataViews.Resolver}
+            let cyberPopItem = nft as! &CyberPopItems.NFT
+            return cyberPopItem as &AnyResource{MetadataViews.Resolver}
         }
 
         destroy() {
@@ -165,7 +165,7 @@ pub contract CyberPopItems: NonFungibleToken {
             // deposit it in the recipient's account using their reference
             recipient.deposit(token: <-newNFT)
 
-            CyberPopItems.totalSupply = ExampleNFT.totalSupply + UInt64(1)
+            CyberPopItems.totalSupply = CyberPopItems.totalSupply + UInt64(1)
         }
     }
 
@@ -174,16 +174,16 @@ pub contract CyberPopItems: NonFungibleToken {
         self.totalSupply = 0
 
         // Set the named paths
-        self.CollectionStoragePath = /storage/exampleNFTCollection
-        self.CollectionPublicPath = /public/exampleNFTCollection
-        self.MinterStoragePath = /storage/exampleNFTMinter
+        self.CollectionStoragePath = /storage/cyberPopItemCollection
+        self.CollectionPublicPath = /public/cyberPopItemCollection
+        self.MinterStoragePath = /storage/cyberPopItemMinter
 
         // Create a Collection resource and save it to storage
         let collection <- create Collection()
         self.account.save(<-collection, to: self.CollectionStoragePath)
 
         // create a public capability for the collection
-        self.account.link<&CyberPopItems.Collection{NonFungibleToken.CollectionPublic, ExampleNFT.ExampleNFTCollectionPublic}>(
+        self.account.link<&CyberPopItems.Collection{NonFungibleToken.CollectionPublic, CyberPopItems.CyberPopItemsCollectionPublic}>(
             self.CollectionPublicPath,
             target: self.CollectionStoragePath
         )
