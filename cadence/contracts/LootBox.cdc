@@ -1,11 +1,12 @@
-// This is an example implementation of a Flow Non-Fungible Token
-// It is not part of the official standard but it assumed to be
-// very similar to how many NFTs would implement the core functionality.
+// CyberPop LootBox NFT contract
 
 import NonFungibleToken from "./NonFungibleToken.cdc"
 import MetadataViews from "./MetadataViews.cdc"
+import CyberPopItems from "./CyberPopItems.cdc"
 
-pub contract CyberPopItems: NonFungibleToken {
+pub contract LootBox: NonFungibleToken {
+    access(self) var templates: {UInt32: Template}
+    access(self) var nftTemplates: {UInt32: NFTTemplate}
 
     pub var totalSupply: UInt64
 
@@ -17,23 +18,64 @@ pub contract CyberPopItems: NonFungibleToken {
     pub let CollectionPublicPath: PublicPath
     pub let MinterStoragePath: StoragePath
 
+    pub struct Template {
+      pub let templateID: UInt32
+      pub let color: String
+      pub let price: UFix64
+
+      init(
+          id: UInt32,
+          color: String,
+          price: UFix64
+      ) {
+          self.templateID = id
+          self.color = color
+          self.price = price
+      }
+    }
+
+    pub struct NFTTemplate {
+        pub let templateID: UInt32
+        pub let name: String
+        pub let description: String
+        pub let thumbnail: String
+
+        init(
+            id: UInt32,
+            name: String,
+            description: String,
+            thumbnail: String
+        ) {
+            self.templateID = id
+            self.name = name
+            self.description = description
+            self.thumbnail = thumbnail
+        }
+    }
+
     pub resource NFT: NonFungibleToken.INFT, MetadataViews.Resolver {
         pub let id: UInt64
 
         pub let name: String
         pub let description: String
         pub let thumbnail: String
+        access(self) let minter: &CyberPopItems.NFTMinter
+        access(self) let recipient: &{NonFungibleToken.Receiver}
 
         init(
             id: UInt64,
             name: String,
             description: String,
             thumbnail: String,
+            recipient: &{NonFungibleToken.Receiver},
+            minter: &CyberPopItems.NFTMinter,
         ) {
             self.id = id
             self.name = name
             self.description = description
             self.thumbnail = thumbnail
+            self.minter = minter
+            self.recipient = recipient
         }
     
         pub fun getViews(): [Type] {
@@ -56,21 +98,30 @@ pub contract CyberPopItems: NonFungibleToken {
 
             return nil
         }
+
+        pub fun unpack(recipient: &{NonFungibleToken.Receiver}): String {
+            let tpl = LootBox.nftTemplates[0]! // TODO randomize based on the current lootbox class
+            self.minter.mintNFT(recipient: self.recipient,
+                name: tpl.name,
+                description: tpl.description,
+                thumbnail: tpl.thumbnail)
+            return tpl.name
+        }
     }
 
-    pub resource interface CyberPopItemsCollectionPublic {
+    pub resource interface LootBoxCollectionPublic {
         pub fun deposit(token: @NonFungibleToken.NFT)
         pub fun getIDs(): [UInt64]
         pub fun borrowNFT(id: UInt64): &NonFungibleToken.NFT
-        pub fun borrowCyberPopItems(id: UInt64): &CyberPopItems.NFT? {
+        pub fun borrowLootBox(id: UInt64): &LootBox.NFT? {
             post {
                 (result == nil) || (result?.id == id):
-                    "Cannot borrow CyberPopItems reference: the ID of the returned reference is incorrect"
+                    "Cannot borrow LootBox reference: the ID of the returned reference is incorrect"
             }
         }
     }
 
-    pub resource Collection: CyberPopItemsCollectionPublic, NonFungibleToken.Provider, NonFungibleToken.Receiver, NonFungibleToken.CollectionPublic, MetadataViews.ResolverCollection {
+    pub resource Collection: LootBoxCollectionPublic, NonFungibleToken.Provider, NonFungibleToken.Receiver, NonFungibleToken.CollectionPublic, MetadataViews.ResolverCollection {
         // dictionary of NFT conforming tokens
         // NFT is a resource type with an `UInt64` ID field
         pub var ownedNFTs: @{UInt64: NonFungibleToken.NFT}
@@ -91,7 +142,7 @@ pub contract CyberPopItems: NonFungibleToken {
         // deposit takes a NFT and adds it to the collections dictionary
         // and adds the ID to the id array
         pub fun deposit(token: @NonFungibleToken.NFT) {
-            let token <- token as! @CyberPopItems.NFT
+            let token <- token as! @LootBox.NFT
 
             let id: UInt64 = token.id
 
@@ -114,11 +165,11 @@ pub contract CyberPopItems: NonFungibleToken {
             return &self.ownedNFTs[id] as &NonFungibleToken.NFT
         }
  
-        pub fun borrowCyberPopItems(id: UInt64): &CyberPopItems.NFT? {
+        pub fun borrowLootBox(id: UInt64): &LootBox.NFT? {
             if self.ownedNFTs[id] != nil {
                 // Create an authorized reference to allow downcasting
                 let ref = &self.ownedNFTs[id] as auth &NonFungibleToken.NFT
-                return ref as! &CyberPopItems.NFT
+                return ref as! &LootBox.NFT
             }
 
             return nil
@@ -126,7 +177,7 @@ pub contract CyberPopItems: NonFungibleToken {
 
         pub fun borrowViewResolver(id: UInt64): &AnyResource{MetadataViews.Resolver} {
             let nft = &self.ownedNFTs[id] as auth &NonFungibleToken.NFT
-            let cyberPopItem = nft as! &CyberPopItems.NFT
+            let cyberPopItem = nft as! &LootBox.NFT
             return cyberPopItem as &AnyResource{MetadataViews.Resolver}
         }
 
@@ -149,29 +200,35 @@ pub contract CyberPopItems: NonFungibleToken {
         // and deposit it in the recipients collection using their collection reference
         pub fun mintNFT(
             recipient: &{NonFungibleToken.Receiver},
+            nftRecipient: &{NonFungibleToken.Receiver},
             name: String,
             description: String,
             thumbnail: String,
+            minter: &CyberPopItems.NFTMinter,
         ) {
 
             // create a new NFT
             var newNFT <- create NFT(
-                id: CyberPopItems.totalSupply,
+                id: LootBox.totalSupply,
                 name: name,
                 description: description,
                 thumbnail: thumbnail,
+                recipient: nftRecipient,
+                minter: minter
             )
 
             // deposit it in the recipient's account using their reference
             recipient.deposit(token: <-newNFT)
 
-            CyberPopItems.totalSupply = CyberPopItems.totalSupply + UInt64(1)
+            LootBox.totalSupply = LootBox.totalSupply + UInt64(1)
         }
     }
 
     init() {
         // Initialize the total supply
         self.totalSupply = 0
+        self.templates = {}
+        self.nftTemplates = {}
 
         // Set the named paths
         self.CollectionStoragePath = /storage/cyberPopItemCollection
@@ -183,7 +240,7 @@ pub contract CyberPopItems: NonFungibleToken {
         self.account.save(<-collection, to: self.CollectionStoragePath)
 
         // create a public capability for the collection
-        self.account.link<&CyberPopItems.Collection{NonFungibleToken.CollectionPublic, CyberPopItems.CyberPopItemsCollectionPublic}>(
+        self.account.link<&LootBox.Collection{NonFungibleToken.CollectionPublic, LootBox.LootBoxCollectionPublic}>(
             self.CollectionPublicPath,
             target: self.CollectionStoragePath
         )

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import * as fcl from "@onflow/fcl";
 import { fetchAccountItems } from "../flow/script.get-account-items"
 import FETCH_ACCOUNT_ITEMS_SCRIPT from "../cadence/scripts/get_account_items.cdc"
+import MINT_NFT from "../cadence/transactions/mint_nft.cdc"
 
 
 export default function Home() {
@@ -52,6 +53,16 @@ export default function Home() {
       args: (arg, t) => [arg(user.addr, t.Address)]
     })
     setChecked(isChecked);
+  }
+
+  const mintNFT = async () => {
+    const transactionId = await fcl.mutate({
+      cadence: MINT_NFT,
+      limit: 50
+    })
+
+    const transaction = await fcl.tx(transactionId).onceSealed()
+    console.log(transaction)
   }
 
   // NEW
@@ -109,6 +120,7 @@ export default function Home() {
         <button onClick={checkQuery}>Check initialized</button>
         <button onClick={initAccount}>Init Account</button> {/* NEW */}
         <button onClick={executeTransaction}>Execute Transaction</button> {/* NEW */}
+        <button onClick={mintNFT}>Mint NFT</button> {/* NEW */}
         <button onClick={fcl.unauthenticate}>Log Out</button>
 
         <hr />
