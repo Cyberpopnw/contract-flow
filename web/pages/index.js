@@ -2,6 +2,9 @@ import Head from 'next/head'
 import "../flow/config";
 import { useState, useEffect } from "react";
 import * as fcl from "@onflow/fcl";
+import { fetchAccountItems } from "../flow/script.get-account-items"
+import FETCH_ACCOUNT_ITEMS_SCRIPT from "../cadence/scripts/get_account_items.cdc"
+
 
 export default function Home() {
 
@@ -9,8 +12,19 @@ export default function Home() {
   const [name, setName] = useState('')
   const [checked, setChecked] = useState(false);
   const [transactionStatus, setTransactionStatus] = useState(null)
+  const [nfts, setNfts] = useState("")
 
   useEffect(() => fcl.currentUser.subscribe(setUser), [])
+
+  const getItems = async () => {
+    // const items = await fetchAccountItems(user.addr);
+    const items = await fcl.query({
+      cadence: FETCH_ACCOUNT_ITEMS_SCRIPT,
+      args: (arg, t) => [arg(user.addr, t.Address)]
+    })
+
+    setNfts(items.join(", "));
+  }
 
   const sendQuery = async () => {
     const profile = await fcl.query({
@@ -90,15 +104,19 @@ export default function Home() {
   const AuthedState = () => {
     return (
       <div>
-        <div>Address: {user?.addr ?? "No Address"}</div>
-        <div>Profile Name: {name ?? "--"}</div>
-        <div>Initialized: {checked ? "initialized" : "uninitialized"}</div>
-        <div>Transaction Status: {transactionStatus ?? "--"}</div> {/* NEW */}
+        <button onClick={getItems}>Get Items</button>
         <button onClick={sendQuery}>Send Query</button>
         <button onClick={checkQuery}>Check initialized</button>
         <button onClick={initAccount}>Init Account</button> {/* NEW */}
         <button onClick={executeTransaction}>Execute Transaction</button> {/* NEW */}
         <button onClick={fcl.unauthenticate}>Log Out</button>
+
+        <hr />
+        <div>Items: {nfts}</div>
+        <div>Address: {user?.addr ?? "No Address"}</div>
+        <div>Profile Name: {name ?? "--"}</div>
+        <div>Initialized: {checked ? "initialized" : "uninitialized"}</div>
+        <div>Transaction Status: {transactionStatus ?? "--"}</div> {/* NEW */}
       </div>
     )
   }
