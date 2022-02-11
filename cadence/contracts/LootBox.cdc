@@ -254,7 +254,7 @@ pub contract LootBox: NonFungibleToken {
         self.totalSupply = 0
         self.templates = {}
         self.nftTemplates = {}
-        self.tokenReceiver = self.account.getCapability<&{FungibleToken.Receiver}>(CyberPopToken.receiverStoragePath)
+        self.tokenReceiver = self.account.getCapability<&{FungibleToken.Receiver}>(CyberPopToken.ReceiverPublicPath)
 
         // Set the named paths
         self.CollectionStoragePath = /storage/cyberPopLootBoxCollection

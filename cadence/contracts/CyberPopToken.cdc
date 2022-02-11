@@ -6,7 +6,8 @@ pub contract CyberPopToken: FungibleToken {
     pub var totalSupply: UFix64
 
     pub var VaultStoragePath: StoragePath
-    pub var ReceiverPublicPath: CapabilityPath
+    pub var ReceiverPublicPath: PublicPath
+    pub var BalancePublicPath: PublicPath
 
     /// TokensInitialized
     ///
@@ -190,6 +191,7 @@ pub contract CyberPopToken: FungibleToken {
         self.totalSupply = 1000.0
         self.VaultStoragePath = /storage/cyberPopTokenVault;
         self.ReceiverPublicPath = /public/cyberPopTokenReceiver
+        self.BalancePublicPath = /public/cyberPopTokenBalance
 
         // Create the Vault with the total supply of tokens and save it in storage
         //
@@ -208,8 +210,8 @@ pub contract CyberPopToken: FungibleToken {
         // the `balance` field through the `Balance` interface
         //
         self.account.link<&CyberPopToken.Vault{FungibleToken.Balance}>(
-            /public/cyberPopTokenBalance,
-            target: /storage/cyberPopTokenVault
+            self.BalancePublicPath,
+            target: self.VaultStoragePath
         )
 
         let admin <- create Administrator()

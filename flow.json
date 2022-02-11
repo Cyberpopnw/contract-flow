@@ -7,7 +7,12 @@
 	},
 	"contracts": {
 		"HelloWorld": "./cadence/contracts/HelloWorld.cdc",
-		"FungibleToken": "./cadence/contracts/FungibleToken.cdc",
+		"FungibleToken": {
+                  "source": "./cadence/contracts/FungibleToken.cdc",
+                  "aliases": {
+			"emulator": "0xf8d6e0586b0a20c7"
+                  }
+                },
 		"NonFungibleToken": "./cadence/contracts/NonFungibleToken.cdc",
 		"CyberPopToken": "./cadence/contracts/CyberPopToken.cdc",
 		"CyberPopItems": "./cadence/contracts/CyberPopItems.cdc",

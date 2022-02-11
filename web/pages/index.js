@@ -7,6 +7,8 @@ import FETCH_ACCOUNT_ITEMS_SCRIPT from "../cadence/scripts/get_account_items.cdc
 import FETCH_CYT_BALANCE from "../cadence/scripts/get_account_cyt.cdc"
 import MINT_NFT from "../cadence/transactions/mint_nft.cdc"
 import MINT_CYT from "../cadence/transactions/mint_cyt.cdc"
+import BUY_LOOTBOX from "../cadence/transactions/buy_lootbox.cdc"
+import SETUP_ACCOUNT from "../cadence/transactions/setup_account.cdc"
 
 
 export default function Home() {
@@ -76,6 +78,19 @@ export default function Home() {
     console.log(transaction)
   }
 
+  const tx = async (cadence) => {
+    const transactionId = await fcl.mutate({
+      cadence: cadence,
+      limit: 50
+    })
+
+    const transaction = await fcl.tx(transactionId).onceSealed()
+    console.log(transaction)
+  }
+
+  const setupAccount = () => tx(SETUP_ACCOUNT)
+  const buyLootbox = () => tx(BUY_LOOTBOX)
+
   const mintCYT = async () => {
     const transactionId = await fcl.mutate({
       cadence: MINT_CYT,
@@ -139,10 +154,11 @@ export default function Home() {
         <button onClick={getCYTBalance}>Query CYT</button>
         <button onClick={sendQuery}>Send Query</button>
         <button onClick={checkQuery}>Check initialized</button>
-        <button onClick={initAccount}>Init Account</button> {/* NEW */}
-        <button onClick={executeTransaction}>Execute Transaction</button> {/* NEW */}
-        <button onClick={mintNFT}>Mint NFT</button> {/* NEW */}
-        <button onClick={mintCYT}>Mint CYT</button> {/* NEW */}
+        <button onClick={setupAccount}>Init Account</button>
+        <button onClick={executeTransaction}>Execute Transaction</button>
+        <button onClick={mintNFT}>Mint NFT</button>
+        <button onClick={mintCYT}>Mint CYT</button>
+        <button onClick={buyLootbox}>Buy LootBox</button>
         <button onClick={fcl.unauthenticate}>Log Out</button>
 
         <hr />

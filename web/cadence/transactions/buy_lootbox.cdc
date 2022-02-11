@@ -1,6 +1,6 @@
+import FungibleToken from 0xFungibleToken
 import LootBox from 0xLootBox
 import CyberPopToken from 0xCyberPopToken
-import FungibleToken from 0xFungibleToken
 import NonFungibleToken from 0xNonFungibleToken
 
 transaction (category: UInt32, amount: UFix64) {
