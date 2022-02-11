@@ -3,10 +3,13 @@
 import NonFungibleToken from "./NonFungibleToken.cdc"
 import MetadataViews from "./MetadataViews.cdc"
 import CyberPopItems from "./CyberPopItems.cdc"
+import FungibleToken from "./FungibleToken.cdc"
+import CyberPopToken from "./CyberPopToken.cdc"
 
 pub contract LootBox: NonFungibleToken {
     access(self) var templates: {UInt32: Template}
     access(self) var nftTemplates: {UInt32: NFTTemplate}
+    access(contract) var tokenReceiver: Capability<&{FungibleToken.Receiver}>
 
     pub var totalSupply: UInt64
 
@@ -21,15 +24,21 @@ pub contract LootBox: NonFungibleToken {
     pub struct Template {
       pub let templateID: UInt32
       pub let color: String
+      pub let class: String
+      pub let thumbnail: String
       pub let price: UFix64
 
       init(
           id: UInt32,
+          class: String,
           color: String,
+          thumbnail: String,
           price: UFix64
       ) {
           self.templateID = id
+          self.class = class
           self.color = color
+          self.thumbnail = thumbnail
           self.price = price
       }
     }
@@ -56,23 +65,23 @@ pub contract LootBox: NonFungibleToken {
     pub resource NFT: NonFungibleToken.INFT, MetadataViews.Resolver {
         pub let id: UInt64
 
-        pub let name: String
-        pub let description: String
+        pub let class: String
+        pub let color: String
         pub let thumbnail: String
         access(self) let minter: &CyberPopItems.NFTMinter
         access(self) let recipient: &{NonFungibleToken.Receiver}
 
         init(
             id: UInt64,
-            name: String,
-            description: String,
+            class: String,
+            color: String,
             thumbnail: String,
             recipient: &{NonFungibleToken.Receiver},
             minter: &CyberPopItems.NFTMinter,
         ) {
             self.id = id
-            self.name = name
-            self.description = description
+            self.class = class 
+            self.color = color
             self.thumbnail = thumbnail
             self.minter = minter
             self.recipient = recipient
@@ -88,8 +97,8 @@ pub contract LootBox: NonFungibleToken {
             switch view {
                 case Type<MetadataViews.Display>():
                     return MetadataViews.Display(
-                        name: self.name,
-                        description: self.description,
+                        name: self.class,
+                        description: self.color,
                         thumbnail: MetadataViews.HTTPFile(
                             url: self.thumbnail
                         )
@@ -191,6 +200,26 @@ pub contract LootBox: NonFungibleToken {
         return <- create Collection()
     }
 
+    // Buy lootbox with CYT
+    pub fun buy(
+        category templateID: UInt32,
+        paymentVault: Capability<&{FungibleToken.Provider}>,
+        nftRecipient: &{NonFungibleToken.Receiver}) : @NFT {
+        let tpl = LootBox.templates[templateID] ?? panic("Unknown lootbox category")
+        if let receiver = self.tokenReceiver.borrow() {
+            receiver.deposit(from: <- paymentVault.borrow()!.withdraw(amount: tpl.price))
+        }
+        let minter = self.account.borrow<&NFTMinter>(from: self.MinterStoragePath)!
+        let nftMinter = self.account.borrow<&CyberPopItems.NFTMinter>(from: CyberPopItems.MinterStoragePath)!
+        let lootbox <- minter.mintNFT(
+            nftRecipient: nftRecipient,
+            class: tpl.class, 
+            color: tpl.color, 
+            thumbnail: tpl.thumbnail,
+            minter: nftMinter)
+        return <- lootbox
+    }
+
     // Resource that an admin or something similar would own to be
     // able to mint new NFTs
     //
@@ -199,28 +228,24 @@ pub contract LootBox: NonFungibleToken {
         // mintNFT mints a new NFT with a new ID
         // and deposit it in the recipients collection using their collection reference
         pub fun mintNFT(
-            recipient: &{NonFungibleToken.Receiver},
             nftRecipient: &{NonFungibleToken.Receiver},
-            name: String,
-            description: String,
+            class: String,
+            color: String,
             thumbnail: String,
             minter: &CyberPopItems.NFTMinter,
-        ) {
-
+        ) : @NFT {
             // create a new NFT
             var newNFT <- create NFT(
                 id: LootBox.totalSupply,
-                name: name,
-                description: description,
+                class: class,
+                color: color,
                 thumbnail: thumbnail,
                 recipient: nftRecipient,
                 minter: minter
             )
 
-            // deposit it in the recipient's account using their reference
-            recipient.deposit(token: <-newNFT)
-
             LootBox.totalSupply = LootBox.totalSupply + UInt64(1)
+            return <- newNFT
         }
     }
 
@@ -229,11 +254,12 @@ pub contract LootBox: NonFungibleToken {
         self.totalSupply = 0
         self.templates = {}
         self.nftTemplates = {}
+        self.tokenReceiver = self.account.getCapability<&{FungibleToken.Receiver}>(CyberPopToken.receiverStoragePath)
 
         // Set the named paths
-        self.CollectionStoragePath = /storage/cyberPopItemCollection
-        self.CollectionPublicPath = /public/cyberPopItemCollection
-        self.MinterStoragePath = /storage/cyberPopItemMinter
+        self.CollectionStoragePath = /storage/cyberPopLootBoxCollection
+        self.CollectionPublicPath = /public/cyberPopLootBoxCollection
+        self.MinterStoragePath = /storage/cyberPopLootBoxMinter
 
         // Create a Collection resource and save it to storage
         let collection <- create Collection()

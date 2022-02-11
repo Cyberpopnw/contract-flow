@@ -13,6 +13,7 @@
 		"CyberPopItems": "./cadence/contracts/CyberPopItems.cdc",
 		"NFTStoreFront": "./cadence/contracts/NFTStoreFront.cdc",
 		"MetadataViews": "./cadence/contracts/MetadataViews.cdc",
+                "LootBox": "./cadence/contracts/LootBox.cdc",
 		"Profile": "./cadence/contracts/Profile.cdc"
 	},
 	"networks": {
@@ -35,6 +36,7 @@
 				"CyberPopToken",
 				"CyberPopItems",
 				"MetadataViews",
+                                "LootBox",
 				"Profile"
 			]
 		}

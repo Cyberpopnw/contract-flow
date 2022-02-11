@@ -4,7 +4,9 @@ import { useState, useEffect } from "react";
 import * as fcl from "@onflow/fcl";
 import { fetchAccountItems } from "../flow/script.get-account-items"
 import FETCH_ACCOUNT_ITEMS_SCRIPT from "../cadence/scripts/get_account_items.cdc"
+import FETCH_CYT_BALANCE from "../cadence/scripts/get_account_cyt.cdc"
 import MINT_NFT from "../cadence/transactions/mint_nft.cdc"
+import MINT_CYT from "../cadence/transactions/mint_cyt.cdc"
 
 
 export default function Home() {
@@ -14,6 +16,7 @@ export default function Home() {
   const [checked, setChecked] = useState(false);
   const [transactionStatus, setTransactionStatus] = useState(null)
   const [nfts, setNfts] = useState("")
+  const [cyt, setCYT] = useState(0)
 
   useEffect(() => fcl.currentUser.subscribe(setUser), [])
 
@@ -25,6 +28,14 @@ export default function Home() {
     })
 
     setNfts(items.join(", "));
+  }
+
+  const getCYTBalance = async () => {
+    const balance = await fcl.query({
+      cadence: FETCH_CYT_BALANCE,
+      args: (arg, t) => [arg(user.addr, t.Address)]
+    })
+    setCYT(balance)
   }
 
   const sendQuery = async () => {
@@ -65,6 +76,15 @@ export default function Home() {
     console.log(transaction)
   }
 
+  const mintCYT = async () => {
+    const transactionId = await fcl.mutate({
+      cadence: MINT_CYT,
+      limit: 50
+    })
+
+    const transaction = await fcl.tx(transactionId).onceSealed()
+    console.log(transaction)
+  }
   // NEW
   const initAccount = async () => {
     const transactionId = await fcl.mutate({
@@ -116,15 +136,18 @@ export default function Home() {
     return (
       <div>
         <button onClick={getItems}>Get Items</button>
+        <button onClick={getCYTBalance}>Query CYT</button>
         <button onClick={sendQuery}>Send Query</button>
         <button onClick={checkQuery}>Check initialized</button>
         <button onClick={initAccount}>Init Account</button> {/* NEW */}
         <button onClick={executeTransaction}>Execute Transaction</button> {/* NEW */}
         <button onClick={mintNFT}>Mint NFT</button> {/* NEW */}
+        <button onClick={mintCYT}>Mint CYT</button> {/* NEW */}
         <button onClick={fcl.unauthenticate}>Log Out</button>
 
         <hr />
         <div>Items: {nfts}</div>
+        <div>CYT: {cyt}</div>
         <div>Address: {user?.addr ?? "No Address"}</div>
         <div>Profile Name: {name ?? "--"}</div>
         <div>Initialized: {checked ? "initialized" : "uninitialized"}</div>

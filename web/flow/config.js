@@ -11,4 +11,5 @@ config({
     "0xNonFungibleToken": "0xf8d6e0586b0a20c7", // The account address where the smart contract lives
     "0xCyberPopToken": "0xf8d6e0586b0a20c7", // The account address where the smart contract lives
     "0xCyberPopItems": "0xf8d6e0586b0a20c7", // The account address where the smart contract lives
+    "0xLootBox": "0xf8d6e0586b0a20c7", // The account address where the smart contract lives
 })

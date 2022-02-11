@@ -5,6 +5,9 @@ pub contract CyberPopToken: FungibleToken {
     /// Total supply of CyberPopTokens in existence
     pub var totalSupply: UFix64
 
+    pub var VaultStoragePath: StoragePath
+    pub var ReceiverPublicPath: CapabilityPath
+
     /// TokensInitialized
     ///
     /// The event that is emitted when the contract is created
@@ -185,18 +188,20 @@ pub contract CyberPopToken: FungibleToken {
 
     init() {
         self.totalSupply = 1000.0
+        self.VaultStoragePath = /storage/cyberPopTokenVault;
+        self.ReceiverPublicPath = /public/cyberPopTokenReceiver
 
         // Create the Vault with the total supply of tokens and save it in storage
         //
         let vault <- create Vault(balance: self.totalSupply)
-        self.account.save(<-vault, to: /storage/cyberPopTokenVault)
+        self.account.save(<-vault, to: self.VaultStoragePath)
 
         // Create a public capability to the stored Vault that only exposes
         // the `deposit` method through the `Receiver` interface
         //
         self.account.link<&{FungibleToken.Receiver}>(
-            /public/cyberPopTokenReceiver,
-            target: /storage/cyberPopTokenVault
+            self.ReceiverPublicPath,
+            target: self.VaultStoragePath
         )
 
         // Create a public capability to the stored Vault that only exposes
