@@ -68,16 +68,16 @@ pub contract LootBox: NonFungibleToken {
         pub let class: String
         pub let color: String
         pub let thumbnail: String
-        access(self) let minter: &CyberPopItems.NFTMinter
-        access(self) let recipient: &{NonFungibleToken.Receiver}
+        access(self) let minter: Capability<&CyberPopItems.NFTMinter>
+        access(self) let recipient: Capability<&{NonFungibleToken.Receiver}>
 
         init(
             id: UInt64,
             class: String,
             color: String,
             thumbnail: String,
-            recipient: &{NonFungibleToken.Receiver},
-            minter: &CyberPopItems.NFTMinter,
+            recipient: Capability<&{NonFungibleToken.Receiver}>,
+            minter: Capability<&CyberPopItems.NFTMinter>,
         ) {
             self.id = id
             self.class = class 
@@ -110,7 +110,7 @@ pub contract LootBox: NonFungibleToken {
 
         pub fun unpack(recipient: &{NonFungibleToken.Receiver}): String {
             let tpl = LootBox.nftTemplates[0]! // TODO randomize based on the current lootbox class
-            self.minter.mintNFT(recipient: self.recipient,
+            self.minter.borrow()!.mintNFT(recipient: self.recipient.borrow()!,
                 name: tpl.name,
                 description: tpl.description,
                 thumbnail: tpl.thumbnail)
@@ -203,14 +203,13 @@ pub contract LootBox: NonFungibleToken {
     // Buy lootbox with CYT
     pub fun buy(
         category templateID: UInt32,
-        paymentVault: Capability<&{FungibleToken.Provider}>,
-        nftRecipient: &{NonFungibleToken.Receiver}) : @NFT {
+        paymentVault: @FungibleToken.Vault,
+        nftRecipient: Capability<&{NonFungibleToken.Receiver}>) : @NFT {
         let tpl = LootBox.templates[templateID] ?? panic("Unknown lootbox category")
-        if let receiver = self.tokenReceiver.borrow() {
-            receiver.deposit(from: <- paymentVault.borrow()!.withdraw(amount: tpl.price))
-        }
+        let receiver = self.tokenReceiver.borrow()!
+        receiver.deposit(from: <- paymentVault)
         let minter = self.account.borrow<&NFTMinter>(from: self.MinterStoragePath)!
-        let nftMinter = self.account.borrow<&CyberPopItems.NFTMinter>(from: CyberPopItems.MinterStoragePath)!
+        let nftMinter = self.account.getCapability<&CyberPopItems.NFTMinter>(/public/minterPublicPath)
         let lootbox <- minter.mintNFT(
             nftRecipient: nftRecipient,
             class: tpl.class, 
@@ -228,11 +227,11 @@ pub contract LootBox: NonFungibleToken {
         // mintNFT mints a new NFT with a new ID
         // and deposit it in the recipients collection using their collection reference
         pub fun mintNFT(
-            nftRecipient: &{NonFungibleToken.Receiver},
+            nftRecipient: Capability<&{NonFungibleToken.Receiver}>,
             class: String,
             color: String,
             thumbnail: String,
-            minter: &CyberPopItems.NFTMinter,
+            minter: Capability<&CyberPopItems.NFTMinter>,
         ) : @NFT {
             // create a new NFT
             var newNFT <- create NFT(
@@ -274,6 +273,13 @@ pub contract LootBox: NonFungibleToken {
         // Create a Minter resource and save it to storage
         let minter <- create NFTMinter()
         self.account.save(<-minter, to: self.MinterStoragePath)
+        self.templates[0] = Template(
+            id: 0,
+            class: "S",
+            color: "Green",
+            thumbnail: "green_box.jpg",
+            price: 100.0
+        )
 
         emit ContractInitialized()
     }

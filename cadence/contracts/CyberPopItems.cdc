@@ -143,7 +143,17 @@ pub contract CyberPopItems: NonFungibleToken {
     // Resource that an admin or something similar would own to be
     // able to mint new NFTs
     //
-    pub resource NFTMinter {
+
+    pub resource interface Minter {
+        pub fun mintNFT(
+            recipient: &{NonFungibleToken.Receiver},
+            name: String,
+            description: String,
+            thumbnail: String,
+        )
+    }
+
+    pub resource NFTMinter : Minter {
 
         // mintNFT mints a new NFT with a new ID
         // and deposit it in the recipients collection using their collection reference
@@ -191,6 +201,10 @@ pub contract CyberPopItems: NonFungibleToken {
         // Create a Minter resource and save it to storage
         let minter <- create NFTMinter()
         self.account.save(<-minter, to: self.MinterStoragePath)
+        self.account.link<&CyberPopItems.NFTMinter{CyberPopItems.Minter}>(
+            /public/minterPublicPath,
+            target: self.MinterStoragePath
+        )
 
         emit ContractInitialized()
     }

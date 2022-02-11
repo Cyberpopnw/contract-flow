@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import * as fcl from "@onflow/fcl";
 import { fetchAccountItems } from "../flow/script.get-account-items"
 import FETCH_ACCOUNT_ITEMS_SCRIPT from "../cadence/scripts/get_account_items.cdc"
+import FETCH_LOOTBOXES from "../cadence/scripts/get_account_lootboxes.cdc"
 import FETCH_CYT_BALANCE from "../cadence/scripts/get_account_cyt.cdc"
 import MINT_NFT from "../cadence/transactions/mint_nft.cdc"
 import MINT_CYT from "../cadence/transactions/mint_cyt.cdc"
@@ -19,6 +20,7 @@ export default function Home() {
   const [transactionStatus, setTransactionStatus] = useState(null)
   const [nfts, setNfts] = useState("")
   const [cyt, setCYT] = useState(0)
+  const [lootboxes, setLootboxes] = useState("")
 
   useEffect(() => fcl.currentUser.subscribe(setUser), [])
 
@@ -55,17 +57,16 @@ export default function Home() {
     setName(profile?.name ?? 'No Profile')
   }
 
-  const checkQuery = async () => {
-    const isChecked = await fcl.query({
-      cadence: `
-      import Profile from 0xProfile
-      pub fun main(address: Address): Bool {
-        return Profile.check(address)
-      }
-    `,
+  const query = async (script) => {
+    return await fcl.query({
+      cadence: script,
       args: (arg, t) => [arg(user.addr, t.Address)]
     })
-    setChecked(isChecked);
+  }
+
+  const getLootboxes = async () => {
+    let ids = await query(FETCH_LOOTBOXES)
+    setLootboxes(ids.join(", "))
   }
 
   const mintNFT = async () => {
@@ -89,73 +90,25 @@ export default function Home() {
   }
 
   const setupAccount = () => tx(SETUP_ACCOUNT)
-  const buyLootbox = () => tx(BUY_LOOTBOX)
-
-  const mintCYT = async () => {
+  const buyLootbox = async () => {
     const transactionId = await fcl.mutate({
-      cadence: MINT_CYT,
-      limit: 50
-    })
-
-    const transaction = await fcl.tx(transactionId).onceSealed()
-    console.log(transaction)
-  }
-  // NEW
-  const initAccount = async () => {
-    const transactionId = await fcl.mutate({
-      cadence: `
-        import Profile from 0xProfile
-
-        transaction {
-          prepare(account: AuthAccount) {
-            // Only initialize the account if it hasn't already been initialized
-            if (!Profile.check(account.address)) {
-              // This creates and stores the profile in the user's account
-              account.save(<- Profile.new(), to: Profile.privatePath)
-
-              // This creates the public capability that lets applications read the profile's info
-              account.link<&Profile.Base{Profile.Public}>(Profile.publicPath, target: Profile.privatePath)
-            }
-          }
-        }
-      `,
-      limit: 50
+      cadence: BUY_LOOTBOX,
+      args: (arg, t) => [arg(0, t.UInt32), arg("100.0", t.UFix64)],
+      limit: 100
     })
 
     const transaction = await fcl.tx(transactionId).onceSealed()
     console.log(transaction)
   }
 
-  const executeTransaction = async () => {
-    const transactionId = await fcl.mutate({
-      cadence: `
-        import Profile from 0xProfile
-
-        transaction(name: String) {
-          prepare(account: AuthAccount) {
-            account
-              .borrow<&Profile.Base{Profile.Owner}>(from: Profile.privatePath)!
-              .setName(name)
-          }
-        }
-      `,
-      args: (arg, t) => [arg("Flow Developer!", t.String)],
-      limit: 50
-    })
-
-    let res = await fcl.tx(transactionId).onceSealed()
-    setTransactionStatus(res.status)
-  }
-
+  const mintCYT = () => tx(MINT_CYT)
   const AuthedState = () => {
     return (
       <div>
         <button onClick={getItems}>Get Items</button>
         <button onClick={getCYTBalance}>Query CYT</button>
-        <button onClick={sendQuery}>Send Query</button>
-        <button onClick={checkQuery}>Check initialized</button>
+        <button onClick={getLootboxes}>Query LootBox</button>
         <button onClick={setupAccount}>Init Account</button>
-        <button onClick={executeTransaction}>Execute Transaction</button>
         <button onClick={mintNFT}>Mint NFT</button>
         <button onClick={mintCYT}>Mint CYT</button>
         <button onClick={buyLootbox}>Buy LootBox</button>
@@ -164,8 +117,8 @@ export default function Home() {
         <hr />
         <div>Items: {nfts}</div>
         <div>CYT: {cyt}</div>
+        <div>LootBoxes: {lootboxes}</div>
         <div>Address: {user?.addr ?? "No Address"}</div>
-        <div>Profile Name: {name ?? "--"}</div>
         <div>Initialized: {checked ? "initialized" : "uninitialized"}</div>
         <div>Transaction Status: {transactionStatus ?? "--"}</div> {/* NEW */}
       </div>
