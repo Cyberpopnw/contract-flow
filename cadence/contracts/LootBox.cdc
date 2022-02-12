@@ -9,6 +9,7 @@ import CyberPopToken from "./CyberPopToken.cdc"
 pub contract LootBox: NonFungibleToken {
     access(self) var templates: {UInt32: Template}
     access(self) var nftTemplates: {UInt32: NFTTemplate}
+    access(self) var nftProbabilities: {UInt32: [UInt64]}
     access(contract) var tokenReceiver: Capability<&{FungibleToken.Receiver}>
 
     pub var totalSupply: UInt64
@@ -68,6 +69,7 @@ pub contract LootBox: NonFungibleToken {
         pub let class: String
         pub let color: String
         pub let thumbnail: String
+        pub let nftId: UInt32
         access(self) let minter: Capability<&CyberPopItems.NFTMinter{CyberPopItems.Minter}>
         access(self) let recipient: Capability<&{NonFungibleToken.Receiver}>
 
@@ -78,6 +80,7 @@ pub contract LootBox: NonFungibleToken {
             thumbnail: String,
             recipient: Capability<&{NonFungibleToken.Receiver}>,
             minter: Capability<&CyberPopItems.NFTMinter{CyberPopItems.Minter}>,
+            nftId: UInt32,
         ) {
             self.id = id
             self.class = class 
@@ -85,6 +88,7 @@ pub contract LootBox: NonFungibleToken {
             self.thumbnail = thumbnail
             self.minter = minter
             self.recipient = recipient
+            self.nftId = nftId
         }
     
         pub fun getViews(): [Type] {
@@ -109,12 +113,32 @@ pub contract LootBox: NonFungibleToken {
         }
 
         access(contract) fun unpack(recipient: &{NonFungibleToken.Receiver}): String {
-            let tpl = LootBox.nftTemplates[0]! // TODO randomize based on the current lootbox class
+            let index = self.weightedRandom(chances: LootBox.nftProbabilities[self.nftId]!)
+            let tpl = LootBox.nftTemplates[index]!
             self.minter.borrow()!.mintNFT(recipient: self.recipient.borrow()!,
                 name: tpl.name,
                 description: tpl.description,
                 thumbnail: tpl.thumbnail)
             return tpl.name
+        }
+
+        // @param chances An array of integer, each element represent the weight of corresponding index
+        // @returns the index picked up
+        access(self) fun weightedRandom(chances: [UInt64]): UInt32 {
+            var sum: UInt64 = 0
+            for chance in chances {
+                sum = sum + chance
+            }
+            var x = unsafeRandom() % sum
+            var index: UInt32 = 0
+            for chance in chances {
+                if x < chance {
+                    return index
+                }
+                index = index + 1
+                x = x - chance
+            }
+            return 0
         }
     }
 
@@ -213,19 +237,20 @@ pub contract LootBox: NonFungibleToken {
         category templateID: UInt32,
         paymentVault: @FungibleToken.Vault,
         nftRecipient: Capability<&{NonFungibleToken.Receiver}>) : @NFT {
-        nftRecipient.borrow() ?? panic("cannot borrow nft receiver")
+        assert(nftRecipient.check(), message: "cannot borrow nft receiver")
         let tpl = LootBox.templates[templateID] ?? panic("Unknown lootbox category")
         let receiver = self.tokenReceiver.borrow()!
         receiver.deposit(from: <- paymentVault)
         let minter = self.account.borrow<&NFTMinter>(from: self.MinterStoragePath)!
         let nftMinter = self.account.getCapability<&CyberPopItems.NFTMinter{CyberPopItems.Minter}>(/public/minterPublicPath)
-        nftMinter.borrow() ?? panic("cannot borrow minter")
+        assert(nftMinter.check(), message: "cannot borrow minter")
         let lootbox <- minter.mintNFT(
             nftRecipient: nftRecipient,
             class: tpl.class, 
             color: tpl.color, 
             thumbnail: tpl.thumbnail,
-            minter: nftMinter)
+            minter: nftMinter,
+            nftId: templateID)
         return <- lootbox
     }
 
@@ -242,6 +267,7 @@ pub contract LootBox: NonFungibleToken {
             color: String,
             thumbnail: String,
             minter: Capability<&CyberPopItems.NFTMinter{CyberPopItems.Minter}>,
+            nftId: UInt32,
         ) : @NFT {
             // create a new NFT
             var newNFT <- create NFT(
@@ -250,7 +276,8 @@ pub contract LootBox: NonFungibleToken {
                 color: color,
                 thumbnail: thumbnail,
                 recipient: nftRecipient,
-                minter: minter
+                minter: minter,
+                nftId: nftId,
             )
 
             LootBox.totalSupply = LootBox.totalSupply + UInt64(1)
@@ -263,6 +290,7 @@ pub contract LootBox: NonFungibleToken {
         self.totalSupply = 0
         self.templates = {}
         self.nftTemplates = {}
+        self.nftProbabilities = {}
         self.tokenReceiver = self.account.getCapability<&{FungibleToken.Receiver}>(CyberPopToken.ReceiverPublicPath)
 
         // Set the named paths
@@ -291,12 +319,37 @@ pub contract LootBox: NonFungibleToken {
             price: 100.0
         )
 
+        self.templates[1] = Template(
+            id: 1,
+            class: "SS",
+            color: "Pink",
+            thumbnail: "pink_box.jpg",
+            price: 120.0
+        )
+
         self.nftTemplates[0] = NFTTemplate(
             id: 0,
             name: "dragon",
             description: "Mighty Dragon",
             thumbnail: "drag.jpg"
         )
+
+        self.nftTemplates[0] = NFTTemplate(
+            id: 0,
+            name: "dragon",
+            description: "Mighty Dragon",
+            thumbnail: "drag.jpg"
+        )
+
+        self.nftTemplates[1] = NFTTemplate(
+            id: 1,
+            name: "egg",
+            description: "A delicious egg",
+            thumbnail: "egg.jpg"
+        )
+
+        self.nftProbabilities[0] = [50, 50]
+        self.nftProbabilities[1] = [10, 90]
 
         emit ContractInitialized()
     }
