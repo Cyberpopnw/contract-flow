@@ -68,7 +68,7 @@ pub contract LootBox: NonFungibleToken {
         pub let class: String
         pub let color: String
         pub let thumbnail: String
-        access(self) let minter: Capability<&CyberPopItems.NFTMinter>
+        access(self) let minter: Capability<&CyberPopItems.NFTMinter{CyberPopItems.Minter}>
         access(self) let recipient: Capability<&{NonFungibleToken.Receiver}>
 
         init(
@@ -77,7 +77,7 @@ pub contract LootBox: NonFungibleToken {
             color: String,
             thumbnail: String,
             recipient: Capability<&{NonFungibleToken.Receiver}>,
-            minter: Capability<&CyberPopItems.NFTMinter>,
+            minter: Capability<&CyberPopItems.NFTMinter{CyberPopItems.Minter}>,
         ) {
             self.id = id
             self.class = class 
@@ -108,7 +108,7 @@ pub contract LootBox: NonFungibleToken {
             return nil
         }
 
-        pub fun unpack(recipient: &{NonFungibleToken.Receiver}): String {
+        access(contract) fun unpack(recipient: &{NonFungibleToken.Receiver}): String {
             let tpl = LootBox.nftTemplates[0]! // TODO randomize based on the current lootbox class
             self.minter.borrow()!.mintNFT(recipient: self.recipient.borrow()!,
                 name: tpl.name,
@@ -128,6 +128,7 @@ pub contract LootBox: NonFungibleToken {
                     "Cannot borrow LootBox reference: the ID of the returned reference is incorrect"
             }
         }
+        pub fun unpackLootBox(id: UInt64, recipient: &{NonFungibleToken.Receiver}): String
     }
 
     pub resource Collection: LootBoxCollectionPublic, NonFungibleToken.Provider, NonFungibleToken.Receiver, NonFungibleToken.CollectionPublic, MetadataViews.ResolverCollection {
@@ -190,6 +191,13 @@ pub contract LootBox: NonFungibleToken {
             return cyberPopItem as &AnyResource{MetadataViews.Resolver}
         }
 
+        pub fun unpackLootBox(id: UInt64, recipient: &{NonFungibleToken.Receiver}): String {
+            let lootbox = self.borrowLootBox(id: id)!
+            let name = lootbox.unpack(recipient: recipient)
+            destroy <- self.withdraw(withdrawID: id)
+            return name
+        }
+
         destroy() {
             destroy self.ownedNFTs
         }
@@ -205,11 +213,13 @@ pub contract LootBox: NonFungibleToken {
         category templateID: UInt32,
         paymentVault: @FungibleToken.Vault,
         nftRecipient: Capability<&{NonFungibleToken.Receiver}>) : @NFT {
+        nftRecipient.borrow() ?? panic("cannot borrow nft receiver")
         let tpl = LootBox.templates[templateID] ?? panic("Unknown lootbox category")
         let receiver = self.tokenReceiver.borrow()!
         receiver.deposit(from: <- paymentVault)
         let minter = self.account.borrow<&NFTMinter>(from: self.MinterStoragePath)!
-        let nftMinter = self.account.getCapability<&CyberPopItems.NFTMinter>(/public/minterPublicPath)
+        let nftMinter = self.account.getCapability<&CyberPopItems.NFTMinter{CyberPopItems.Minter}>(/public/minterPublicPath)
+        nftMinter.borrow() ?? panic("cannot borrow minter")
         let lootbox <- minter.mintNFT(
             nftRecipient: nftRecipient,
             class: tpl.class, 
@@ -231,7 +241,7 @@ pub contract LootBox: NonFungibleToken {
             class: String,
             color: String,
             thumbnail: String,
-            minter: Capability<&CyberPopItems.NFTMinter>,
+            minter: Capability<&CyberPopItems.NFTMinter{CyberPopItems.Minter}>,
         ) : @NFT {
             // create a new NFT
             var newNFT <- create NFT(
@@ -279,6 +289,13 @@ pub contract LootBox: NonFungibleToken {
             color: "Green",
             thumbnail: "green_box.jpg",
             price: 100.0
+        )
+
+        self.nftTemplates[0] = NFTTemplate(
+            id: 0,
+            name: "dragon",
+            description: "Mighty Dragon",
+            thumbnail: "drag.jpg"
         )
 
         emit ContractInitialized()

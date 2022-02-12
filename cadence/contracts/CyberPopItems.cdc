@@ -193,7 +193,7 @@ pub contract CyberPopItems: NonFungibleToken {
         self.account.save(<-collection, to: self.CollectionStoragePath)
 
         // create a public capability for the collection
-        self.account.link<&CyberPopItems.Collection{NonFungibleToken.CollectionPublic, CyberPopItems.CyberPopItemsCollectionPublic}>(
+        self.account.link<&CyberPopItems.Collection{NonFungibleToken.CollectionPublic, NonFungibleToken.Receiver, CyberPopItems.CyberPopItemsCollectionPublic}>(
             self.CollectionPublicPath,
             target: self.CollectionStoragePath
         )

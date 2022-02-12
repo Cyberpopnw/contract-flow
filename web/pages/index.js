@@ -9,6 +9,7 @@ import FETCH_CYT_BALANCE from "../cadence/scripts/get_account_cyt.cdc"
 import MINT_NFT from "../cadence/transactions/mint_nft.cdc"
 import MINT_CYT from "../cadence/transactions/mint_cyt.cdc"
 import BUY_LOOTBOX from "../cadence/transactions/buy_lootbox.cdc"
+import UNPACK_LOOTBOX from "../cadence/transactions/unpack_lootbox.cdc"
 import SETUP_ACCOUNT from "../cadence/transactions/setup_account.cdc"
 
 
@@ -101,6 +102,19 @@ export default function Home() {
     console.log(transaction)
   }
 
+  const unpackLootbox = async (id) => {
+    const transactionId = await fcl.mutate({
+      cadence: UNPACK_LOOTBOX,
+      args: (arg, t) => [arg(id, t.UInt64)],
+      limit: 100
+    })
+
+    const transaction = await fcl.tx(transactionId).onceSealed()
+    console.log(transaction)
+  }
+
+
+
   const mintCYT = () => tx(MINT_CYT)
   const AuthedState = () => {
     return (
@@ -108,6 +122,7 @@ export default function Home() {
         <button onClick={getItems}>Get Items</button>
         <button onClick={getCYTBalance}>Query CYT</button>
         <button onClick={getLootboxes}>Query LootBox</button>
+        <button onClick={() => unpackLootbox(1)}>Unpack LootBox</button>
         <button onClick={setupAccount}>Init Account</button>
         <button onClick={mintNFT}>Mint NFT</button>
         <button onClick={mintCYT}>Mint CYT</button>
