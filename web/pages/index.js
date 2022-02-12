@@ -6,6 +6,7 @@ import { fetchAccountItems } from "../flow/script.get-account-items"
 import FETCH_ACCOUNT_ITEMS_SCRIPT from "../cadence/scripts/get_account_items.cdc"
 import FETCH_LOOTBOXES from "../cadence/scripts/get_account_lootboxes.cdc"
 import FETCH_CYT_BALANCE from "../cadence/scripts/get_account_cyt.cdc"
+import FETCH_LOOTBOX from "../cadence/scripts/get_lootbox.cdc"
 import MINT_NFT from "../cadence/transactions/mint_nft.cdc"
 import MINT_CYT from "../cadence/transactions/mint_cyt.cdc"
 import BUY_LOOTBOX from "../cadence/transactions/buy_lootbox.cdc"
@@ -41,6 +42,14 @@ export default function Home() {
       args: (arg, t) => [arg(user.addr, t.Address)]
     })
     setCYT(balance)
+  }
+
+  const getLootBox = async (id) => {
+    const lootbox = await fcl.query({
+      cadence: FETCH_LOOTBOX,
+      args: (arg, t) => [arg(user.addr, t.Address), arg(id, t.UInt64)]
+    })
+    setName(lootbox.class);
   }
 
   const sendQuery = async () => {
@@ -122,7 +131,8 @@ export default function Home() {
         <button onClick={getItems}>Get Items</button>
         <button onClick={getCYTBalance}>Query CYT</button>
         <button onClick={getLootboxes}>Query LootBox</button>
-        <button onClick={() => unpackLootbox(1)}>Unpack LootBox</button>
+        <button onClick={() => getLootBox(0)}>Query LootBox detail</button>
+        <button onClick={() => unpackLootbox(0)}>Unpack LootBox</button>
         <button onClick={setupAccount}>Init Account</button>
         <button onClick={mintNFT}>Mint NFT</button>
         <button onClick={mintCYT}>Mint CYT</button>
@@ -133,6 +143,7 @@ export default function Home() {
         <div>Items: {nfts}</div>
         <div>CYT: {cyt}</div>
         <div>LootBoxes: {lootboxes}</div>
+        <div>LootBox: {name}</div>
         <div>Address: {user?.addr ?? "No Address"}</div>
         <div>Initialized: {checked ? "initialized" : "uninitialized"}</div>
         <div>Transaction Status: {transactionStatus ?? "--"}</div> {/* NEW */}
