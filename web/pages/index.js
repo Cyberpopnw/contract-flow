@@ -1,5 +1,7 @@
 import Head from 'next/head'
 import "../flow/config";
+import "bootstrap/dist/css/bootstrap.css";
+import { Link, Route } from "wouter";
 import { useState, useEffect } from "react";
 import * as fcl from "@onflow/fcl";
 import { fetchAccountItems } from "../flow/script.get-account-items"
@@ -13,6 +15,8 @@ import BUY_LOOTBOX from "../cadence/transactions/buy_lootbox.cdc"
 import UNPACK_LOOTBOX from "../cadence/transactions/unpack_lootbox.cdc"
 import SETUP_ACCOUNT from "../cadence/transactions/setup_account.cdc"
 
+import { LootBoxVendor } from '../components/LootBoxVendor';
+import { NFTCollection } from '../components/NFTCollection';
 
 export default function Home() {
 
@@ -43,6 +47,8 @@ export default function Home() {
     })
     setCYT(balance)
   }
+
+  useEffect(() => user.loggedIn && getCYTBalance(), [user, transactionStatus]);
 
   const getLootBox = async (id) => {
     const lootbox = await fcl.query({
@@ -128,25 +134,46 @@ export default function Home() {
   const AuthedState = () => {
     return (
       <div>
-        <button onClick={getItems}>Get Items</button>
-        <button onClick={getCYTBalance}>Query CYT</button>
-        <button onClick={getLootboxes}>Query LootBox</button>
-        <button onClick={() => getLootBox(0)}>Query LootBox detail</button>
-        <button onClick={() => unpackLootbox(0)}>Unpack LootBox</button>
-        <button onClick={setupAccount}>Init Account</button>
-        <button onClick={mintNFT}>Mint NFT</button>
-        <button onClick={mintCYT}>Mint CYT</button>
-        <button onClick={buyLootbox}>Buy LootBox</button>
-        <button onClick={fcl.unauthenticate}>Log Out</button>
+        <ul className="nav">
+          <li className="nav-item">
+            <Link className="nav-link" to="/">Home</Link>
+          </li>
+          <li className="nav-item">
+            <Link className="nav-link" to="/buy">Buy</Link>
+          </li>
+          <li className="nav-item">
+            <Link className="nav-link" to="/nft">NFT</Link>
+          </li>
+        </ul>
 
         <hr />
-        <div>Items: {nfts}</div>
-        <div>CYT: {cyt}</div>
-        <div>LootBoxes: {lootboxes}</div>
-        <div>LootBox: {name}</div>
-        <div>Address: {user?.addr ?? "No Address"}</div>
-        <div>Initialized: {checked ? "initialized" : "uninitialized"}</div>
-        <div>Transaction Status: {transactionStatus ?? "--"}</div> {/* NEW */}
+        <Route path="/">
+          <div>
+            <button onClick={getItems}>Get Items</button>
+            <button onClick={getCYTBalance}>Query CYT</button>
+            <button onClick={getLootboxes}>Query LootBox</button>
+            <button onClick={() => getLootBox(0)}>Query LootBox detail</button>
+            <button onClick={() => unpackLootbox(0)}>Unpack LootBox</button>
+            <button onClick={setupAccount}>Init Account</button>
+            <button onClick={mintNFT}>Mint NFT</button>
+            <button onClick={mintCYT}>Mint CYT</button>
+            <button onClick={buyLootbox}>Buy LootBox</button>
+            <button onClick={fcl.unauthenticate}>Log Out</button>
+          </div>
+          <div>Items: {nfts}</div>
+          <div>CYT: {cyt}</div>
+          <div>LootBoxes: {lootboxes}</div>
+          <div>LootBox: {name}</div>
+          <div>Address: {user?.addr ?? "No Address"}</div>
+          <div>Initialized: {checked ? "initialized" : "uninitialized"}</div>
+          <div>Transaction Status: {transactionStatus ?? "--"}</div> {/* NEW */}
+        </Route>
+        <Route path="/buy">
+          <LootBoxVendor />
+        </Route>
+        <Route path="/nft">
+          <NFTCollection user={user} />
+        </Route>
       </div>
     )
   }
