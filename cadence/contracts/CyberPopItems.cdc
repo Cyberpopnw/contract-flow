@@ -62,7 +62,7 @@ pub contract CyberPopItems: NonFungibleToken {
         pub fun deposit(token: @NonFungibleToken.NFT)
         pub fun getIDs(): [UInt64]
         pub fun borrowNFT(id: UInt64): &NonFungibleToken.NFT
-        pub fun borrowCyberPopItems(id: UInt64): &CyberPopItems.NFT? {
+        pub fun borrowCyberPopItem(id: UInt64): &CyberPopItems.NFT? {
             post {
                 (result == nil) || (result?.id == id):
                     "Cannot borrow CyberPopItems reference: the ID of the returned reference is incorrect"
@@ -114,7 +114,7 @@ pub contract CyberPopItems: NonFungibleToken {
             return &self.ownedNFTs[id] as &NonFungibleToken.NFT
         }
  
-        pub fun borrowCyberPopItems(id: UInt64): &CyberPopItems.NFT? {
+        pub fun borrowCyberPopItem(id: UInt64): &CyberPopItems.NFT? {
             if self.ownedNFTs[id] != nil {
                 // Create an authorized reference to allow downcasting
                 let ref = &self.ownedNFTs[id] as auth &NonFungibleToken.NFT

@@ -4,6 +4,7 @@ import FETCH_LOOTBOXES from "../cadence/scripts/get_account_lootboxes.cdc"
 import FETCH_LOOTBOX from "../cadence/scripts/get_lootbox.cdc"
 import UNPACK_LOOTBOX from "../cadence/transactions/unpack_lootbox.cdc"
 import FETCH_ACCOUNT_ITEMS_SCRIPT from "../cadence/scripts/get_account_items.cdc"
+import FETCH_ACCOUNT_ITEM_SCRIPT from "../cadence/scripts/get_account_item.cdc"
 
 const query = async (script, user) => {
     return await fcl.query({
@@ -20,19 +21,29 @@ const getLootBox = async (user, id) => {
     return lootbox
 }
 
+const getNFT = async (user, id) => {
+    const item = await fcl.query({
+        cadence: FETCH_ACCOUNT_ITEM_SCRIPT,
+        args: (arg, t) => [arg(user.addr, t.Address), arg(id, t.UInt64)]
+    })
+    return item
+}
+
 export function NFTCollection({ user }) {
-    const [nfts, setNfts] = useState("")
+    const [nfts, setNfts] = useState([])
     const [boxes, setBoxes] = useState([])
     const [transactionStatus, setTransactionStatus] = useState(0)
 
     const getItems = async (user) => {
-        // const items = await fetchAccountItems(user.addr);
         const items = await fcl.query({
             cadence: FETCH_ACCOUNT_ITEMS_SCRIPT,
             args: (arg, t) => [arg(user.addr, t.Address)]
         })
-
-        setNfts(items.join(", "));
+        items.forEach(async (id) => {
+            let item = await getNFT(user, id);
+            item.id = id
+            setNfts(old => [...old, item])
+        })
     }
 
     useEffect(() => getItems(user), [user])
@@ -62,7 +73,18 @@ export function NFTCollection({ user }) {
     }, [user])
     return (
         <>
-            <div>NFTS: {nfts}</div>
+            <div>
+                NFTS:
+                <ul>
+                    {nfts.map(item => {
+                        return (
+                            <div id={item.name}>
+                                {item.name}
+                            </div>
+                        )
+                    })}
+                </ul>
+            </div>
             <div className="row">
                 {boxes.map((box, i) => {
                     return (
