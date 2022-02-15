@@ -98,7 +98,7 @@ export default function Home() {
   const tx = async (cadence) => {
     const transactionId = await fcl.mutate({
       cadence: cadence,
-      limit: 50
+      limit: 100
     })
 
     const transaction = await fcl.tx(transactionId).onceSealed()

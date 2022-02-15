@@ -78,7 +78,7 @@ export function NFTCollection({ user }) {
                 <ul>
                     {nfts.map(item => {
                         return (
-                            <div id={item.name}>
+                            <div key={item.name}>
                                 {item.name}
                             </div>
                         )
