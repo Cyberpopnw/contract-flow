@@ -129,16 +129,21 @@ pub contract LootBox: NonFungibleToken {
             for chance in chances {
                 sum = sum + chance
             }
-            var x = unsafeRandom() % sum
+            var x = self.pseudoRandom() % sum
             var index: UInt32 = 0
             for chance in chances {
                 if x < chance {
                     return index
                 }
-                index = index + 1
                 x = x - chance
+                index = index + 1
             }
             return 0
+        }
+
+        access(self) fun pseudoRandom(): UInt64 {
+            let b = getCurrentBlock()
+            return UInt64(b.timestamp)
         }
     }
 
@@ -329,27 +334,36 @@ pub contract LootBox: NonFungibleToken {
 
         self.nftTemplates[0] = NFTTemplate(
             id: 0,
-            name: "dragon",
-            description: "Mighty Dragon",
-            thumbnail: "drag.jpg"
-        )
-
-        self.nftTemplates[0] = NFTTemplate(
-            id: 0,
-            name: "dragon",
-            description: "Mighty Dragon",
-            thumbnail: "drag.jpg"
+            name: "Sword",
+            description: "They are primary weapons for certain Warrior-type classes.",
+            thumbnail: "sword.jpg"
         )
 
         self.nftTemplates[1] = NFTTemplate(
             id: 1,
-            name: "egg",
-            description: "A delicious egg",
-            thumbnail: "egg.jpg"
+            name: "Double Dragger",
+            description: "They are primary weapons for certain Assassin-type classes.",
+            thumbnail: "doubleaxe.jpg"
         )
 
-        self.nftProbabilities[0] = [50, 50]
-        self.nftProbabilities[1] = [10, 90]
+        self.nftTemplates[2] = NFTTemplate(
+            id: 2,
+            name: "Warrior",
+            description: "Warriors deliver attacks with brutal efficiency and raw strength.",
+            thumbnail: "male.jpg"
+        )
+
+        self.nftTemplates[3] = NFTTemplate(
+            id: 3,
+            name: "Assassin",
+            description: "Assassins can attack from afar or up close depending on their weapon of choice.",
+            thumbnail: "female.jpg"
+        )
+
+
+
+        self.nftProbabilities[0] = [50, 50, 0, 0]
+        self.nftProbabilities[1] = [0, 0, 50, 50]
 
         emit ContractInitialized()
     }

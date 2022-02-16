@@ -32,21 +32,39 @@ const getNFT = async (user, id) => {
 export function NFTCollection({ user }) {
     const [nfts, setNfts] = useState([])
     const [boxes, setBoxes] = useState([])
-    const [transactionStatus, setTransactionStatus] = useState(0)
 
     const getItems = async (user) => {
         const items = await fcl.query({
             cadence: FETCH_ACCOUNT_ITEMS_SCRIPT,
             args: (arg, t) => [arg(user.addr, t.Address)]
         })
+        setNfts([])
         items.forEach(async (id) => {
             let item = await getNFT(user, id);
             item.id = id
             setNfts(old => [...old, item])
         })
+        console.log("get item: " + items.length)
     }
 
-    useEffect(() => getItems(user), [user])
+    const getLootboxes = async () => {
+        let ids = await query(FETCH_LOOTBOXES, user)
+        setBoxes([])
+        ids.forEach(async (id) => {
+            let lootbox = await getLootBox(user, id);
+            lootbox.id = id
+            setBoxes(old => [...old, lootbox])
+        })
+        console.log('get loot box ' + ids.length)
+    }
+
+    useEffect(() => {
+        const update = async () => {
+            await getItems(user)
+        }
+        update()
+        return () => setNfts([])
+    }, [])
 
     const unpackLootbox = async (id) => {
         const transactionId = await fcl.mutate({
@@ -57,34 +75,35 @@ export function NFTCollection({ user }) {
 
         const transaction = await fcl.tx(transactionId).onceSealed()
         console.log(transaction)
+        setNfts([])
+        await getItems(user)
+        setBoxes([])
+        await getLootboxes()
     }
 
     useEffect(() => {
-        const getLootboxes = async () => {
-            let ids = await query(FETCH_LOOTBOXES, user)
-            setBoxes([])
-            ids.forEach(async (id) => {
-                let lootbox = await getLootBox(user, id);
-                lootbox.id = id
-                setBoxes(old => [...old, lootbox])
-            })
-        }
         getLootboxes()
-    }, [user])
+        return () => setBoxes([])
+    }, [])
     return (
         <>
             <div>
                 NFTS:
-                <ul>
-                    {nfts.map(item => {
+                <div class="row">
+                    {nfts.map((item, i) => {
                         return (
-                            <div key={item.name}>
-                                {item.name}
+                            <div className="col-md-1 card" key={i}>
+                                <img src={"/" + item.thumbnail} className="card-img-top" alt="..." />
+                                <div className="card-body">
+                                    <h5 className="card-title">{item.name}</h5>
+                                    <p className="card-text">{item.description}</p>
+                                </div>
                             </div>
                         )
                     })}
-                </ul>
+                </div>
             </div>
+            Boxes:
             <div className="row">
                 {boxes.map((box, i) => {
                     return (

@@ -149,15 +149,7 @@ export default function Home() {
         <hr />
         <Route path="/">
           <div>
-            <button onClick={getItems}>Get Items</button>
-            <button onClick={getCYTBalance}>Query CYT</button>
-            <button onClick={getLootboxes}>Query LootBox</button>
-            <button onClick={() => getLootBox(0)}>Query LootBox detail</button>
-            <button onClick={() => unpackLootbox(0)}>Unpack LootBox</button>
             <button onClick={setupAccount}>Init Account</button>
-            <button onClick={mintNFT}>Mint NFT</button>
-            <button onClick={mintCYT}>Mint CYT</button>
-            <button onClick={buyLootbox}>Buy LootBox</button>
             <button onClick={fcl.unauthenticate}>Log Out</button>
           </div>
           <div>Items: {nfts}</div>
