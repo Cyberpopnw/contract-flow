@@ -6,20 +6,18 @@
 		}
 	},
 	"contracts": {
-		"HelloWorld": "./cadence/contracts/HelloWorld.cdc",
 		"FungibleToken": {
-                  "source": "./cadence/contracts/FungibleToken.cdc",
-                  "aliases": {
-			"emulator": "0xf8d6e0586b0a20c7"
-                  }
-                },
+			"source": "./cadence/contracts/FungibleToken.cdc",
+			"aliases": {
+				"emulator": "0xf8d6e0586b0a20c7"
+			}
+		},
 		"NonFungibleToken": "./cadence/contracts/NonFungibleToken.cdc",
 		"CyberPopToken": "./cadence/contracts/CyberPopToken.cdc",
 		"CyberPopItems": "./cadence/contracts/CyberPopItems.cdc",
 		"NFTStoreFront": "./cadence/contracts/NFTStoreFront.cdc",
 		"MetadataViews": "./cadence/contracts/MetadataViews.cdc",
-                "LootBox": "./cadence/contracts/LootBox.cdc",
-		"Profile": "./cadence/contracts/Profile.cdc"
+		"LootBox": "./cadence/contracts/LootBox.cdc"
 	},
 	"networks": {
 		"emulator": "127.0.0.1:3569",
@@ -45,21 +43,19 @@
 				"CyberPopToken",
 				"CyberPopItems",
 				"MetadataViews",
-                                "LootBox",
+				"LootBox",
 				"Profile"
 			]
 		},
-                "testnet": {
+		"testnet": {
 			"testnet-account": [
-				"HelloWorld",
 				"FungibleToken",
 				"NonFungibleToken",
 				"CyberPopToken",
 				"CyberPopItems",
 				"MetadataViews",
-                                "LootBox",
-				"Profile"
+				"LootBox"
 			]
-                }
+		}
 	}
 }
