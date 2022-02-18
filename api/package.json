@@ -1,0 +1,26 @@
+{
+  "name": "api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "tsnd src/index.ts --respawn --dev",
+    "build": "tsc",
+    "format": "prettier \"src/**/*.ts\" \"test/**/*.ts\"",
+    "format:check": "npm run format -- -c",
+    "format:write": "npm run format -- --write"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@onflow/fcl": "^0.0.77",
+    "@onflow/types": "^0.0.6",
+    "@types/express": "^4.17.13",
+    "elliptic": "^6.5.4",
+    "express": "^4.17.3",
+    "sha3": "^2.1.4"
+  },
+  "devDependencies": {
+    "ts-node-dev": "^1.1.8"
+  }
+}
