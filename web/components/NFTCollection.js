@@ -89,7 +89,7 @@ export function NFTCollection({ user }) {
         <>
             <div>
                 NFTS:
-                <div class="row">
+                <div className="row">
                     {nfts.map((item, i) => {
                         return (
                             <div className="col-md-1 card" key={i}>

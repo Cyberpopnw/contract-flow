@@ -329,7 +329,7 @@ pub contract LootBox: NonFungibleToken {
             class: "SS",
             color: "Pink",
             thumbnail: "pink_box.jpg",
-            price: 120.0
+            price: 150.0
         )
 
         self.nftTemplates[0] = NFTTemplate(

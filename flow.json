@@ -37,14 +37,12 @@
 	"deployments": {
 		"emulator": {
 			"emulator-account": [
-				"HelloWorld",
 				"FungibleToken",
 				"NonFungibleToken",
 				"CyberPopToken",
 				"CyberPopItems",
 				"MetadataViews",
-				"LootBox",
-				"Profile"
+				"LootBox"
 			]
 		},
 		"testnet": {

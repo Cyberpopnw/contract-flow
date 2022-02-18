@@ -4,30 +4,20 @@ import "bootstrap/dist/css/bootstrap.css";
 import { Link, Route } from "wouter";
 import { useState, useEffect } from "react";
 import * as fcl from "@onflow/fcl";
-import FETCH_CYT_BALANCE from "../cadence/scripts/get_account_cyt.cdc"
-import MINT_NFT from "../cadence/transactions/mint_nft.cdc"
 import MINT_CYT from "../cadence/transactions/mint_cyt.cdc"
-import SETUP_ACCOUNT from "../cadence/transactions/setup_account.cdc"
+import TRANSFER_CYT from "../cadence/transactions/transfer_cyt.cdc"
 
 import { LootBoxVendor } from '../components/LootBoxVendor';
 import { NFTCollection } from '../components/NFTCollection';
+import { Profile } from '../components/Profile';
 
 export default function Home() {
 
   const [user, setUser] = useState({ loggedIn: null })
-  const [cyt, setCYT] = useState(0)
 
-  useEffect(() => fcl.currentUser.subscribe(setUser), [])
-
-  const getCYTBalance = async () => {
-    const balance = await fcl.query({
-      cadence: FETCH_CYT_BALANCE,
-      args: (arg, t) => [arg(user.addr, t.Address)]
-    })
-    setCYT(balance)
-  }
-
-  useEffect(() => user.loggedIn && getCYTBalance(), [user, transactionStatus]);
+  // var user = fcl.currentUser.snapshot()
+  // fcl.currentUser.subscribe(console.log)
+  useEffect(() => fcl.currentUser().subscribe(setUser), [])
 
   const tx = async (cadence) => {
     const transactionId = await fcl.mutate({
@@ -39,9 +29,7 @@ export default function Home() {
     console.log(transaction)
   }
 
-  const setupAccount = () => tx(SETUP_ACCOUNT)
-
-  const mintCYT = () => tx(MINT_CYT)
+  const mintCYT = async () => await tx(MINT_CYT)
   const AuthedState = () => {
     return (
       <div>
@@ -59,17 +47,7 @@ export default function Home() {
 
         <hr />
         <Route path="/">
-          <div>
-            <button onClick={setupAccount}>Init Account</button>
-            <button onClick={fcl.unauthenticate}>Log Out</button>
-          </div>
-          <div>Items: {nfts}</div>
-          <div>CYT: {cyt}</div>
-          <div>LootBoxes: {lootboxes}</div>
-          <div>LootBox: {name}</div>
-          <div>Address: {user?.addr ?? "No Address"}</div>
-          <div>Initialized: {checked ? "initialized" : "uninitialized"}</div>
-          <div>Transaction Status: {transactionStatus ?? "--"}</div> {/* NEW */}
+          <Profile user={user} />
         </Route>
         <Route path="/buy">
           <LootBoxVendor />
@@ -85,7 +63,6 @@ export default function Home() {
     return (
       <div>
         <button onClick={fcl.logIn}>Log In</button>
-        <button onClick={fcl.signUp}>Sign Up</button>
       </div>
     )
   }

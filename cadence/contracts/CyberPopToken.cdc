@@ -188,7 +188,7 @@ pub contract CyberPopToken: FungibleToken {
     }
 
     init() {
-        self.totalSupply = 1000.0
+        self.totalSupply = 100_000.0
         self.VaultStoragePath = /storage/cyberPopTokenVault;
         self.ReceiverPublicPath = /public/cyberPopTokenReceiver
         self.BalancePublicPath = /public/cyberPopTokenBalance

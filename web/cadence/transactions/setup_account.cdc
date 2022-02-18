@@ -28,7 +28,7 @@ transaction {
             // init Lootbox collection
             acct.save(<- lootboxCollection, to: LootBox.CollectionStoragePath)
             // create a public capability for the collection
-            acct.link<&LootBox.Collection{NonFungibleToken.CollectionPublic, LootBox.LootBoxCollectionPublic}>(
+            acct.link<&LootBox.Collection{NonFungibleToken.Receiver, NonFungibleToken.CollectionPublic, LootBox.LootBoxCollectionPublic}>(
                 LootBox.CollectionPublicPath,
                 target: LootBox.CollectionStoragePath
             )
@@ -59,7 +59,7 @@ transaction {
             // init CyberPop NFT collection
             let nftCollection <- CyberPopItems.createEmptyCollection()
             acct.save(<- nftCollection, to: CyberPopItems.CollectionStoragePath)
-            acct.link<&CyberPopItems.Collection{NonFungibleToken.CollectionPublic, CyberPopItems.CyberPopItemsCollectionPublic}>(
+            acct.link<&CyberPopItems.Collection{NonFungibleToken.Receiver, NonFungibleToken.CollectionPublic, CyberPopItems.CyberPopItemsCollectionPublic}>(
                 CyberPopItems.CollectionPublicPath,
                 target: CyberPopItems.CollectionStoragePath
             )

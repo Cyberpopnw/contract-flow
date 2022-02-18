@@ -14,6 +14,7 @@ transaction (category: UInt32, amount: UFix64) {
         let lootboxCollection = acct.borrow<&LootBox.Collection>(from: LootBox.CollectionStoragePath) ?? panic("cannot borrow collection")
         self.lootboxReceiver = lootboxCollection as &AnyResource{NonFungibleToken.Receiver}
         self.nftReceiver  = acct.getCapability<&{NonFungibleToken.Receiver}>(CyberPopItems.CollectionPublicPath)
+        assert(self.nftReceiver.check(), message: "cannot borrow nft receiver")
     }
     pre {
         // self.nftReceiver.check() : panic("cannot borrow collection")

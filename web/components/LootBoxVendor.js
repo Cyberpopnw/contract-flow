@@ -20,16 +20,16 @@ export function LootBoxVendor() {
                 <div className="card-body">
                     <h5 className="card-title">Weapon Box</h5>
                     <p className="card-text">Gives a random weapon</p>
-                    <a className="btn btn-primary" onClick={() => buyLootBox(0, "100.0")}>Buy</a>
+                    <a className="btn btn-primary" onClick={() => buyLootBox(0, "100.0")}>100 CYT</a>
                 </div>
             </div>
 
             <div className="col-md-2 card" key="2">
                 <img src="/SS.jpg" className="card-img-top" alt="..." />
                 <div className="card-body">
-                    <h5 className="card-title">Premium Box</h5>
+                    <h5 className="card-title">Character Box</h5>
                     <p className="card-text">Gives a random character</p>
-                    <a className="btn btn-primary" onClick={() => buyLootBox(1, "120.0")}>Buy</a>
+                    <a className="btn btn-primary" onClick={() => buyLootBox(1, "150.0")}>150 CYT</a>
                 </div>
             </div>
         </div>
